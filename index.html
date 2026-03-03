@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick-Click Game</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f4f4f9; }
+        #game-container { max-width: 500px; margin: 50px auto; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        #target { width: 100px; height: 100px; background: #ff4757; color: white; border-radius: 50%; display: none; line-height: 100px; margin: 20px auto; cursor: pointer; user-select: none; font-weight: bold; }
+        .stats { display: flex; justify-content: space-around; font-size: 1.2rem; margin-bottom: 20px; }
+        button { padding: 10px 25px; font-size: 1rem; cursor: pointer; background: #2ed573; border: none; color: white; border-radius: 5px; }
+        #leaderboard { margin-top: 30px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>Quick-Click!</h1>
+    <p>How many times can you click the red circle in 10 seconds?</p>
+    
+    <div class="stats">
+        <div>Time: <span id="timer">10</span>s</div>
+        <div>Score: <span id="score">0</span></div>
+    </div>
+
+    <button id="start-btn">Start Game</button>
+    <div id="target">CLICK!</div>
+
+    <div id="leaderboard">
+        <h3>Top Scores</h3>
+        <table id="score-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    let score = 0;
+    let timeLeft = 10;
+    let timerInterval;
+
+    // Load leaderboard on start
+    displayLeaderboard();
+
+    $('#start-btn').click(function() {
+        score = 0;
+        timeLeft = 10;
+        $('#score').text(score);
+        $('#timer').text(timeLeft);
+        $(this).hide();
+        $('#target').show();
+
+        timerInterval = setInterval(function() {
+            timeLeft--;
+            $('#timer').text(timeLeft);
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+    });
+
+    $('#target').mousedown(function() {
+        score++;
+        $('#score').text(score);
+        // Add a little "bounce" effect
+        $(this).css('transform', 'scale(0.95)');
+    }).mouseup(function() {
+        $(this).css('transform', 'scale(1)');
+    });
+
+    function endGame() {
+        clearInterval(timerInterval);
+        $('#target').hide();
+        $('#start-btn').show().text('Try Again');
+        
+        let playerName = prompt("Game Over! Your score: " + score + "\nEnter your name:");
+        if (playerName) {
+            saveScore(playerName, score);
+        }
+    }
+
+    function saveScore(name, score) {
+        let scores = JSON.parse(localStorage.getItem('clickGameScores')) || [];
+        scores.push({ name: name, score: score });
+        // Sort descending
+        scores.sort((a, b) => b.score - a.score);
+        // Keep top 5
+        scores = scores.slice(0, 5);
+        localStorage.setItem('clickGameScores', JSON.stringify(scores));
+        displayLeaderboard();
+    }
+
+    function displayLeaderboard() {
+        let scores = JSON.parse(localStorage.getItem('clickGameScores')) || [];
+        let html = '';
+        scores.forEach((entry, index) => {
+            html += `<tr>
+                <td>${index + 1}</td>
+                <td>${entry.name}</td>
+                <td>${entry.score}</td>
+            </tr>`;
+        });
+        $('#score-table tbody').html(html);
+    }
+});
+</script>
+
+</body>
+</html>
